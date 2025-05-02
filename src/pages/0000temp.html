@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量子文明：完全体</title>
+    <style>
+        /* 整合后的样式... */
+    </style>
+</head>
+<body>
+    <canvas id="threeCanvas"></canvas>
+    
+    <!-- 游戏主界面 -->
+    <div class="game-container draggable">
+        <div class="drag-handle">🌍 文明生存</div>
+        <div class="status-bar">
+            <!-- 状态显示... -->
+        </div>
+        <div id="story"></div>
+        <div id="choices"></div>
+    </div>
+
+    <!-- 科技树面板 -->
+    <div class="tech-tree draggable">
+        <!-- 科技树内容... -->
+    </div>
+
+    <!-- 量子社区 -->
+    <div class="community-container draggable">
+        <!-- 社区内容... -->
+    </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+class QuantumSystem {
+    constructor() {
+        this.initThreeScene();
+        this.initGameSystems();
+        this.initCommunitySystem();
+        this.initDragSystem();
+        this.initNPCSystem();
+    }
+
+    // 初始化3D场景... 
+
+    initGameSystems() {
+        this.gameState = {
+            // 扩展后的游戏状态
+            health: 100,
+            hunger: 0,
+            day: 1,
+            population: 10,
+            unlockedTechs: [],
+            resources: {
+                wood: 0,
+                flint: 0,
+                food: 10,
+                copper: 0,
+                tin: 0
+            },
+            modifiers: {
+                gatherEfficiency: 1,
+                foodQuality: 1,
+                toolQuality: 1,
+                defense: 1
+            },
+            buildings: [],
+            currentScene: 'start'
+        };
+
+        this.techTree = {
+            eras: [
+                {
+                    name: "原始时代",
+                    requirements: { days: 3 },
+                    techs: [
+                        {
+                            name: "用火技术",
+                            cost: { wood: 5, flint: 3 },
+                            effects: { foodQuality: 2 },
+                            unlocks: ["熟食体系"]
+                        },
+                        {
+                            name: "石器制作",
+                            cost: { flint: 5 },
+                            effects: { gatherEfficiency: 1.5 }
+                        }
+                    ]
+                },
+                {
+                    name: "青铜时代",
+                    requirements: { population: 50 },
+                    techs: [
+                        {
+                            name: "青铜冶炼",
+                            cost: { copper: 10, tin: 5 },
+                            effects: { toolQuality: 2 }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        this.scenes = {
+            start: {
+                text: "🌄 量子波动中苏醒...",
+                choices: [
+                    { text: "🔍 量子勘探", action: "search" },
+                    { text: "🏗️ 建造基地", action: "build" },
+                    { text: "🔬 研发科技", action: "research" }
+                ]
+            },
+            search: {
+                text: "🌌 发现量子矿脉：",
+                dynamicText: state => {
+                    const finds = ["铜矿(+3铜)", "锡矿(+2锡)", "燧石(+3燧石)"];
+                    return `🌌 发现量子矿脉：${fists[Math.floor(Math.random()*finds.length)]}`;
+                },
+                choices: [
+                    { text: "⛏️ 采集资源", action: "gather" },
+                    { text: "🔙 返回", action: "start" }
+                ]
+            },
+            // 更多场景...
+        };
+
+        this.updateGameDisplay();
+        setInterval(() => this.gameLoop(), 1000);
+    }
+
+    // 完整的科技树解锁逻辑
+    unlockTech(techName) {
+        const tech = this.techTree.eras.flatMap(e => e.techs).find(t => t.name === techName);
+        if (!tech) return false;
+
+        // 验证资源
+        if (!Object.entries(tech.cost).every(([res, amount]) => 
+            this.gameState.resources[res] >= amount
+        )) return false;
+
+        // 扣除资源
+        Object.entries(tech.cost).forEach(([res, amount]) => {
+            this.gameState.resources[res] -= amount;
+        });
+
+        // 应用效果
+        Object.entries(tech.effects).forEach(([mod, value]) => {
+            this.gameState.modifiers[mod] = value;
+        });
+
+        this.gameState.unlockedTechs.push(techName);
+        this.updateTechDisplay();
+        return true;
+    }
+
+    // NPC入侵系统
+    initNPCSystem() {
+        this.invasion = {
+            currentWave: 0,
+            enemies: [],
+            waveInterval: setInterval(() => {
+                if (this.gameState.day % 5 === 0) {
+                    this.startInvasionWave();
+                }
+            }, 60000)
+        };
+    }
+
+    startInvasionWave() {
+        this.invasion.currentWave++;
+        const waveSize = 3 + this.invasion.currentWave * 2;
+        const enemyTypes = this.gameState.day > 10 ? 
+            ["量子机械体", "暗物质生物"] : ["原始掠夺者"];
+        
+        for (let i = 0; i < waveSize; i++) {
+            this.invasion.enemies.push({
+                type: enemyTypes[Math.floor(Math.random() * enemyTypes.length)],
+                health: 50 + this.invasion.currentWave * 20,
+                damage: 10 + this.invasion.currentWave * 5
+            });
+        }
+        this.updateCombatLog("⚠️ 量子入侵警报！敌军接近中...");
+    }
+
+    // 社区系统增强
+    initCommunitySystem() {
+        this.community = {
+            users: JSON.parse(localStorage.getItem('qcUsers') || '{}'),
+            posts: JSON.parse(localStorage.getItem('qcPosts') || '[]'),
+            messages: JSON.parse(localStorage.getItem('qcMessages') || '[]'),
+            
+            register: (userId, password) => {
+                if (userId.length !== 16) return false;
+                if (this.community.users[userId]) return false;
+                
+                this.community.users[userId] = {
+                    password: btoa(password),
+                    resources: { ...this.gameState.resources },
+                    joined: new Date()
+                };
+                this.saveCommunityData();
+                return true;
+            },
+            
+            login: (userId, password) => {
+                const user = this.community.users[userId];
+                return user && user.password === btoa(password);
+            }
+        };
+    }
+
+    saveCommunityData() {
+        localStorage.setItem('qcUsers', JSON.stringify(this.community.users));
+        localStorage.setItem('qcPosts', JSON.stringify(this.community.posts));
+        localStorage.setItem('qcMessages', JSON.stringify(this.community.messages));
+    }
+
+    // 扩展事件处理
+    handleChoice(action) {
+        const sceneHandlers = {
+            research: () => this.showTechTree(),
+            build: () => {
+                if (this.gameState.resources.wood >= 20) {
+                    this.gameState.buildings.push("防御工事");
+                    this.gameState.resources.wood -= 20;
+                    this.gameState.modifiers.defense += 0.5;
+                    this.updateGameDisplay();
+                }
+            },
+            gather: () => {
+                const gains = {
+                    copper: Math.floor(Math.random() * 3) + 1,
+                    tin: Math.floor(Math.random() * 2) + 1,
+                    flint: Math.floor(Math.random() * 4) + 2
+                };
+                Object.entries(gains).forEach(([res, val]) => {
+                    this.gameState.resources[res] += val * this.gameState.modifiers.gatherEfficiency;
+                });
+                this.updateGameDisplay();
+            },
+            // 更多事件处理...
+        };
+
+        sceneHandlers[action]?.();
+        this.updateGameDisplay();
+    }
+
+    // 更新所有显示
+    updateGameDisplay() {
+        // 更新DOM元素...
+    }
+
+    gameLoop() {
+        // 处理NPC战斗
+        if (this.invasion.enemies.length > 0) {
+            const totalDamage = this.invasion.enemies.reduce((sum, enemy) => 
+                sum + enemy.damage, 0);
+            
+            const defense = this.gameState.buildings.length * 5 + 
+                this.gameState.population * 2;
+            
+            this.gameState.health -= Math.max(0, totalDamage - defense);
+            this.updateGameDisplay();
+            
+            if (this.gameState.health <= 0) {
+                this.gameOver();
+            }
+        }
+    }
+
+    gameOver() {
+        alert("文明陨落！量子波动归于平静...");
+        location.reload();
+    }
+}
+
+// 初始化系统
+const quantum = new QuantumSystem();
+</script>
+</body>
+</html>
